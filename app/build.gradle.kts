@@ -67,6 +67,10 @@ android {
     versionName = projectVersionName
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     vectorDrawables.useSupportLibrary = true
+    ndk {
+      // Restrict native libraries to ARM architectures only
+      abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+    }
   }
   buildFeatures {
     buildConfig = true
