@@ -49,8 +49,9 @@ jobs:
       - name: Build release AAB
         run: ./gradlew clean bundleRelease
 
-      - name: Sign AAB
+      - name: Sign AAB (if secrets configured)
         id: sign_aab
+        if: ${{ secrets.SIGNING_KEY != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/bundle-ready/release
@@ -61,22 +62,34 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Create/Update GitHub Release
+      - name: Prepare release files (AAB)
+        run: |
+          if [ -n "${{ steps.sign_aab.outputs.signedReleaseFile }}" ]; then
+            echo "release_file=${{ steps.sign_aab.outputs.signedReleaseFile }}" >> $GITHUB_ENV
+          else
+            UNSIGNED=$(find app/build/outputs/bundle-ready/release -name "*.aab" | head -1)
+            cp "$UNSIGNED" app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab
+            echo "release_file=$(readlink -f app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab)" >> $GITHUB_ENV
+          fi
+
+      - name: Create/Update GitHub Release (AAB)
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+          files: ${{ env.release_file }}
           tag_name: ${{ env.tag_name }}
+          body: |
+            ## Deskflow Android ${{ env.tag_name }}
+
+            首次正式发布，支持 Android 14+ (API 34)。
+
+            ### 特性
+            - ARM-only 构建（armeabi-v7a, arm64-v8a）
+            - 客户端-服务端 Deskflow 协议实现
+            - 虚拟键盘 (IME) 与辅助功能服务
+            - 剪贴板同步（文本）
+            - TLS 支持
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#
-#      - name: Upload to Google Play
-#        uses: r0adkll/upload-google-play@v1
-#        with:
-#          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-#          packageName: org.tfv.deskflow
-#          releaseFiles: ${{ steps.sign_aab.outputs.signedReleaseFile }}
-#          track: alpha
-#          status: completed
 
   release-apk:
     runs-on: ubuntu-latest
@@ -107,8 +120,9 @@ jobs:
       - name: Build release APK
         run: ./gradlew clean assembleRelease
 
-      - name: Sign APK
+      - name: Sign APK (if secrets configured)
         id: sign_apk
+        if: ${{ secrets.SIGNING_KEY != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/apk-ready/release
@@ -119,10 +133,20 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Create/Update GitHub Release
+      - name: Prepare release files (APK)
+        run: |
+          if [ -n "${{ steps.sign_apk.outputs.signedReleaseFile }}" ]; then
+            echo "release_file=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_ENV
+          else
+            UNSIGNED=$(find app/build/outputs/apk-ready/release -name "*.apk" | head -1)
+            cp "$UNSIGNED" app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk
+            echo "release_file=$(readlink -f app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk)" >> $GITHUB_ENV
+          fi
+
+      - name: Create/Update GitHub Release (APK)
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.sign_apk.outputs.signedReleaseFile }}
+          files: ${{ env.release_file }}
           tag_name: ${{ env.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
