@@ -24,9 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
         run: |
@@ -38,9 +35,10 @@ jobs:
           echo "tag_name=${{ github.ref_name }}" >> $GITHUB_ENV
 
       - name: Checkout tag
-        run: |
-          git fetch --tags
-          git checkout tags/${{ env.tag_name }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.tag_name }}
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -84,9 +82,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
         run: |
@@ -98,12 +93,10 @@ jobs:
           echo "tag_name=${{ github.ref_name }}" >> $GITHUB_ENV
 
       - name: Checkout tag
-        run: |
-          git fetch --tags
-          git checkout tags/${{ env.tag_name }}
-          
-          echo "Available build tools:"
-          ls /usr/local/lib/android/sdk/build-tools/
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.tag_name }}
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v4
