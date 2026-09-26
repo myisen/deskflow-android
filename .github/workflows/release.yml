@@ -5,7 +5,8 @@ on:
     inputs:
       tagName:
         description: 'Tag to release'
-        required: true
+        required: false
+        default: 'v1.0.0'
         type: string
 
   workflow_call:
