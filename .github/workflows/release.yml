@@ -52,7 +52,7 @@ jobs:
 
       - name: Sign AAB (if secrets configured)
         id: sign_aab
-        if: ${{ secrets.SIGNING_KEY != '' }}
+        if: ${{ format('{0}', secrets.SIGNING_KEY) != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/bundle-ready/release
@@ -123,7 +123,7 @@ jobs:
 
       - name: Sign APK (if secrets configured)
         id: sign_apk
-        if: ${{ secrets.SIGNING_KEY != '' }}
+        if: ${{ format('{0}', secrets.SIGNING_KEY) != '' }}
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/apk-ready/release
