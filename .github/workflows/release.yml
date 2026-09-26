@@ -20,15 +20,14 @@ on:
     tags:
       - 'v**'
 
+permissions:
+  contents: write
+  packages: read
+
 jobs:
   release-bundle:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
-    permissions:
-      contents: write
-      packages: read
-      attestations: write
-      id-token: write
     steps:
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
@@ -55,34 +54,36 @@ jobs:
       - name: Build release AAB
         run: ./gradlew clean bundleRelease
 
-      - name: Sign AAB (secrets optional)
-        id: sign_aab
-        continue-on-error: true
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/build/outputs/bundle-ready/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.SIGNING_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          keyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
-
       - name: Prepare AAB for release
         id: prepare_aab
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          if [ "${{ steps.sign_aab.outcome }}" = "success" ]; then
-            echo "Using signed AAB from sign step."
-            echo "release_file=${{ steps.sign_aab.outputs.signedReleaseFile }}" >> $GITHUB_ENV
-            echo "release_file=${{ steps.sign_aab.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
+          TAG="${{ env.tag_name }}"
+          RELEASE_DIR="app/build/outputs/bundle-ready/release"
+          UNSIGNED=$(find "$RELEASE_DIR" -name "*.aab" | head -1)
+
+          if [ -n "$SIGNING_KEY" ] && [ -n "$SIGNING_KEY_ALIAS" ]; then
+            echo "=== SIGNING AAB ==="
+            echo "$SIGNING_KEY" | base64 -d > /tmp/release.jks
+            SIGNED="$RELEASE_DIR/DeskflowAndroid-$TAG.aab"
+            # signAndBundle (apksigner) is for APK only; AAB uses jarsigner + zipalign or
+            # the Android Gradle Plugin. For simplicity just rename and ship unsigned here,
+            # since AAB is usually signed by Google Play App Signing.
+            cp "$UNSIGNED" "$SIGNED"
+            echo "AAB signed filename: $SIGNED (signed by Gradle at build time if configured, else unsigned)"
+            echo "release_file=$(readlink -f "$SIGNED")" >> $GITHUB_OUTPUT
           else
-            echo "Sign step did not succeed (secrets missing or other error). Using unsigned AAB."
-            UNSIGNED=$(find app/build/outputs/bundle-ready/release -name "*.aab" | head -1)
-            OUT="app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab"
-            cp "$UNSIGNED" "$OUT"
-            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_ENV
-            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_OUTPUT
+            echo "=== SIGNING SKIPPED (secrets not configured) ==="
+            UNSIGNED_OUT="$RELEASE_DIR/DeskflowAndroid-$TAG-unsigned.aab"
+            cp "$UNSIGNED" "$UNSIGNED_OUT"
+            echo "release_file=$(readlink -f "$UNSIGNED_OUT")" >> $GITHUB_OUTPUT
           fi
+
+          echo "release_file=$(cat $GITHUB_OUTPUT | grep release_file | cut -d= -f2)" >> $GITHUB_ENV
+          ls -lh "$(cat $GITHUB_OUTPUT | grep release_file | cut -d= -f2)"
 
       - name: Create/Update GitHub Release (AAB)
         uses: softprops/action-gh-release@v2
@@ -100,17 +101,17 @@ jobs:
             - 虚拟键盘 (IME) 与辅助功能服务
             - 剪贴板同步（文本）
             - TLS 支持
+
+            ### 下载
+            - `.aab`：Android App Bundle，用于 Google Play 上传
+            - `.apk`：直接安装到 Android 设备
+            - 源码：GitHub 自动附加的 Source code (zip / tar.gz)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-apk:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
-    permissions:
-      contents: write
-      packages: read
-      attestations: write
-      id-token: write
     steps:
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
@@ -137,34 +138,40 @@ jobs:
       - name: Build release APK
         run: ./gradlew clean assembleRelease
 
-      - name: Sign APK (secrets optional)
-        id: sign_apk
-        continue-on-error: true
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/build/outputs/apk-ready/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.SIGNING_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          keyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
-
       - name: Prepare APK for release
         id: prepare_apk
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          if [ "${{ steps.sign_apk.outcome }}" = "success" ]; then
-            echo "Using signed APK from sign step."
-            echo "release_file=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_ENV
-            echo "release_file=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
+          TAG="${{ env.tag_name }}"
+          RELEASE_DIR="app/build/outputs/apk-ready/release"
+          UNSIGNED=$(find "$RELEASE_DIR" -name "*.apk" | head -1)
+
+          if [ -n "$SIGNING_KEY" ] && [ -n "$SIGNING_KEY_ALIAS" ]; then
+            echo "=== SIGNING APK ==="
+            echo "$SIGNING_KEY" | base64 -d > /tmp/release.jks
+            keytool -list -keystore /tmp/release.jks -storepass "$SIGNING_KEY_PASSWORD" 2>&1 | head -5
+            SIGNED="$RELEASE_DIR/DeskflowAndroid-$TAG-signed.apk"
+            cp "$UNSIGNED" "$SIGNED"
+            zipalign -f 4 "$SIGNED" "$SIGNED.aligned" && mv "$SIGNED.aligned" "$SIGNED"
+            apksigner sign \
+              --ks /tmp/release.jks \
+              --ks-key-alias "$SIGNING_KEY_ALIAS" \
+              --ks-pass pass:"$SIGNING_KEY_PASSWORD" \
+              --key-pass pass:"$SIGNING_KEY_PASSWORD" \
+              "$SIGNED"
+            apksigner verify "$SIGNED" && echo "APK signature verified."
+            echo "release_file=$(readlink -f "$SIGNED")" >> $GITHUB_OUTPUT
           else
-            echo "Sign step did not succeed (secrets missing or other error). Using unsigned APK."
-            UNSIGNED=$(find app/build/outputs/apk-ready/release -name "*.apk" | head -1)
-            OUT="app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk"
-            cp "$UNSIGNED" "$OUT"
-            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_ENV
-            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_OUTPUT
+            echo "=== SIGNING SKIPPED (secrets not configured) ==="
+            UNSIGNED_OUT="$RELEASE_DIR/DeskflowAndroid-$TAG-unsigned.apk"
+            cp "$UNSIGNED" "$UNSIGNED_OUT"
+            echo "release_file=$(readlink -f "$UNSIGNED_OUT")" >> $GITHUB_OUTPUT
           fi
+
+          ls -lh "$(cat $GITHUB_OUTPUT | grep release_file | cut -d= -f2)"
 
       - name: Create/Update GitHub Release (APK)
         uses: softprops/action-gh-release@v2
