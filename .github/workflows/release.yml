@@ -50,9 +50,9 @@ jobs:
       - name: Build release AAB
         run: ./gradlew clean bundleRelease
 
-      - name: Sign AAB (if secrets configured)
+      - name: Sign AAB (secrets optional)
         id: sign_aab
-        if: ${{ format('{0}', secrets.SIGNING_KEY) != '' }}
+        continue-on-error: true
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/bundle-ready/release
@@ -63,20 +63,26 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Prepare release files (AAB)
+      - name: Prepare AAB for release
+        id: prepare_aab
         run: |
-          if [ -n "${{ steps.sign_aab.outputs.signedReleaseFile }}" ]; then
+          if [ "${{ steps.sign_aab.outcome }}" = "success" ]; then
+            echo "Using signed AAB from sign step."
             echo "release_file=${{ steps.sign_aab.outputs.signedReleaseFile }}" >> $GITHUB_ENV
+            echo "release_file=${{ steps.sign_aab.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
           else
+            echo "Sign step did not succeed (secrets missing or other error). Using unsigned AAB."
             UNSIGNED=$(find app/build/outputs/bundle-ready/release -name "*.aab" | head -1)
-            cp "$UNSIGNED" app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab
-            echo "release_file=$(readlink -f app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab)" >> $GITHUB_ENV
+            OUT="app/build/outputs/bundle-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.aab"
+            cp "$UNSIGNED" "$OUT"
+            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_ENV
+            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_OUTPUT
           fi
 
       - name: Create/Update GitHub Release (AAB)
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.release_file }}
+          files: ${{ steps.prepare_aab.outputs.release_file }}
           tag_name: ${{ env.tag_name }}
           body: |
             ## Deskflow Android ${{ env.tag_name }}
@@ -121,9 +127,9 @@ jobs:
       - name: Build release APK
         run: ./gradlew clean assembleRelease
 
-      - name: Sign APK (if secrets configured)
+      - name: Sign APK (secrets optional)
         id: sign_apk
-        if: ${{ format('{0}', secrets.SIGNING_KEY) != '' }}
+        continue-on-error: true
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/apk-ready/release
@@ -134,20 +140,26 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Prepare release files (APK)
+      - name: Prepare APK for release
+        id: prepare_apk
         run: |
-          if [ -n "${{ steps.sign_apk.outputs.signedReleaseFile }}" ]; then
+          if [ "${{ steps.sign_apk.outcome }}" = "success" ]; then
+            echo "Using signed APK from sign step."
             echo "release_file=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_ENV
+            echo "release_file=${{ steps.sign_apk.outputs.signedReleaseFile }}" >> $GITHUB_OUTPUT
           else
+            echo "Sign step did not succeed (secrets missing or other error). Using unsigned APK."
             UNSIGNED=$(find app/build/outputs/apk-ready/release -name "*.apk" | head -1)
-            cp "$UNSIGNED" app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk
-            echo "release_file=$(readlink -f app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk)" >> $GITHUB_ENV
+            OUT="app/build/outputs/apk-ready/release/DeskflowAndroid-${{ env.tag_name }}-unsigned.apk"
+            cp "$UNSIGNED" "$OUT"
+            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_ENV
+            echo "release_file=$(readlink -f "$OUT")" >> $GITHUB_OUTPUT
           fi
 
       - name: Create/Update GitHub Release (APK)
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.release_file }}
+          files: ${{ steps.prepare_apk.outputs.release_file }}
           tag_name: ${{ env.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
