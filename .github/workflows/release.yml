@@ -24,6 +24,11 @@ jobs:
   release-bundle:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
+    permissions:
+      contents: write
+      packages: read
+      attestations: write
+      id-token: write
     steps:
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
@@ -101,6 +106,11 @@ jobs:
   release-apk:
     runs-on: ubuntu-latest
     environment: DeskflowAndroid
+    permissions:
+      contents: write
+      packages: read
+      attestations: write
+      id-token: write
     steps:
       - name: Get tag from input
         if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
