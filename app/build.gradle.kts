@@ -25,6 +25,7 @@
 import com.android.ddmlib.AndroidDebugBridge
 import com.google.protobuf.gradle.id
 import com.google.protobuf.gradle.proto
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -54,10 +55,32 @@ protobuf {
 
 val (projectVersionName, projectVersionCode) = readVersionProperties(project)
 
+// 从 local.properties 读取 release 签名配置（本地用，CI 不存在时 release 回退到未签名）
+// Gradle 默认不读 local.properties，这里手动加载
+val localPropsFile = rootProject.file("local.properties")
+val localProps = Properties().also { p ->
+  if (localPropsFile.exists()) localPropsFile.inputStream().use { p.load(it) }
+}
+val releaseKeystorePath = localProps.getProperty("RELEASE_KEYSTORE")
+val releaseKeyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")
+val releaseStorePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+val releaseKeyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+
 android {
   namespace = "org.tfv.deskflow"
   buildToolsVersion = "36.0.0"
   compileSdk = 36
+
+  signingConfigs {
+    create("releaseLocal") {
+      if (releaseKeystorePath != null && releaseKeyAlias != null) {
+        storeFile = file(releaseKeystorePath)
+        storePassword = releaseStorePassword ?: ""
+        keyAlias = releaseKeyAlias
+        keyPassword = releaseKeyPassword ?: ""
+      }
+    }
+  }
 
   defaultConfig {
     applicationId = "org.tfv.deskflow"
@@ -92,6 +115,7 @@ android {
         "proguard-rules.pro",
       )
       buildConfigField("boolean", "DEBUG", "false")
+      signingConfig = signingConfigs.getByName("releaseLocal")
     }
 
     // applicationVariants.all {
