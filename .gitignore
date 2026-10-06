@@ -8,4 +8,4 @@ release
 *.aab
 *.aar
 
-local.properties
+local.properties.android-signing/
