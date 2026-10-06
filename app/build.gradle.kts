@@ -115,7 +115,11 @@ android {
         "proguard-rules.pro",
       )
       buildConfigField("boolean", "DEBUG", "false")
-      signingConfig = signingConfigs.getByName("releaseLocal")
+      // 本地有 local.properties + RELEASE_KEYSTORE 时用本地签名；
+      // CI 没有这些属性时保持未签名，由 release.yml 里的 apksigner 二次签。
+      if (releaseKeystorePath != null && releaseKeyAlias != null) {
+        signingConfig = signingConfigs.getByName("releaseLocal")
+      }
     }
 
     // applicationVariants.all {
