@@ -8,4 +8,8 @@ release
 *.aab
 *.aar
 
+<<<<<<< HEAD
 local.properties.android-signing/
+=======
+local.properties
+>>>>>>> trae/agent-0UI0AO

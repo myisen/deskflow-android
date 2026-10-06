@@ -23,22 +23,52 @@
  */
 package org.tfv.deskflow.client.io.msgs
 
+<<<<<<< HEAD
 import java.io.DataInputStream
 import java.io.DataOutputStream
 
+=======
+import org.tfv.deskflow.client.io.readString
+import org.tfv.deskflow.client.io.writeString
+import java.io.DataInputStream
+import java.io.DataOutputStream
+
+/**
+ * DKRP 1.0:  3 × short  = 6 字节（id, mask, count）
+ * DKRP 新:   4 × short + 可选 UTF-8 string（id, mask, count, button, text）
+ * 模板在 MessageTemplate 里会命中新版（有 %s），但服务端可能发老版。
+ * readData 根据 dataSize 智能判断，避免越界读。
+ */
+>>>>>>> trae/agent-0UI0AO
 class KeyRepeatMessage(
     var id: UInt = 0u,
     var mask: UInt = 0u,
     var count: Short = 0,
     var button: UInt = 0u,
+<<<<<<< HEAD
 ) : Message(MESSAGE_TYPE) {
 
 
+=======
+    var text: String? = null,
+) : Message(MESSAGE_TYPE) {
+
+>>>>>>> trae/agent-0UI0AO
     override fun readData(inStream: DataInputStream, dataSize: Int) {
         id = inStream.readUnsignedShort().toUInt()
         mask = inStream.readUnsignedShort().toUInt()
         count = inStream.readShort()
+<<<<<<< HEAD
         button = inStream.readUnsignedShort().toUInt()
+=======
+        if (dataSize >= 8) {
+            // 新版 DKRP：多一个 button + 可选 text
+            button = inStream.readUnsignedShort().toUInt()
+            if (dataSize > 8) {
+                text = inStream.readString()
+            }
+        }
+>>>>>>> trae/agent-0UI0AO
     }
 
     override fun writeData(outStream: DataOutputStream) {
@@ -46,10 +76,19 @@ class KeyRepeatMessage(
         outStream.writeShort(mask.toInt())
         outStream.writeShort(count.toInt())
         outStream.writeShort(button.toInt())
+<<<<<<< HEAD
     }
 
     override fun toString(): String {
         return "$MESSAGE_TYPE:$id:$mask:$button"
+=======
+        text?.let { outStream.writeString(it) }
+    }
+
+    override fun toString(): String {
+        val textPart = text?.let { ", text=\"$it\"" } ?: ""
+        return "$MESSAGE_TYPE:$id:$mask:$count:$button$textPart"
+>>>>>>> trae/agent-0UI0AO
     }
 
     companion object {

@@ -44,6 +44,7 @@ enum class MessageType(val value: String, val commonName: String, template: Mess
     CINFOACK("CIAK", "[Command] Info Ack"),
     CKEEPALIVE("CALV", "[Command] Keep Alive"),
     DKEYDOWN("DKDN", "[Data] Key Down"),
+    DKEYDOWNLANG("DKDL", "[Data] Key Down (lang-aware, with text)"),
     DKEYREPEAT("DKRP", "[Data] Key Repeat"),
     DKEYUP("DKUP", "[Data] Key Up"),
     DMOUSEDOWN("DMDN", "[Data] Mouse Down"),

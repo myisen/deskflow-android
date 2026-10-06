@@ -31,6 +31,10 @@
             tools:ignore="ProtectedPermissions"/>
 
     <uses-permission android:name="android.permission.INTERNET"/>
+<<<<<<< HEAD
+=======
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+>>>>>>> trae/agent-0UI0AO
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
