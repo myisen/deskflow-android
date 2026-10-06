@@ -61,12 +61,10 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           TAG="${{ env.tag_name }}"
-          # AGP may place output under apk/release or apk-ready/release
           APK_DIR=$(find app/build/outputs -type d \( -path "*/apk/release" -o -path "*/apk-ready/release" \) | head -1)
           UNSIGNED=$(find "$APK_DIR" -name "*.apk" | head -1)
           SIGNED="$APK_DIR/DeskflowAndroid-$TAG.apk"
 
-          # apksigner lives under $ANDROID_HOME/build-tools/<ver>/apksigner
           BUILD_TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)
           echo "Build tools: $BUILD_TOOLS"
           echo "Unsigned APK: $UNSIGNED"
@@ -110,22 +108,6 @@ jobs:
         with:
           files: ${{ steps.sign.outputs.SIGNED_APK }}
           tag_name: ${{ env.tag_name }}
-          body: |
-            ## Deskflow Android ${{ env.tag_name }}
-
-            首次正式发布，支持 Android 14+ (API 34)。
-
-            ### 特性
-            - ARM-only 构建（armeabi-v7a, arm64-v8a）
-            - 客户端-服务端 Deskflow 协议实现
-            - 虚拟键盘 (IME) 与辅助功能服务
-            - 剪贴板同步（文本）
-            - TLS 支持
-
-            ### 下载
-            - `.apk`：直接安装到 Android 设备
-            - `.aab`：Android App Bundle（Google Play 上传用）
-            - 源码：GitHub 自动附加的 Source code (zip / tar.gz)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -162,9 +144,9 @@ jobs:
         id: prep
         run: |
           TAG="${{ env.tag_name }}"
-          RELEASE_DIR="app/build/outputs/bundle-ready/release"
-          AAB=$(find "$RELEASE_DIR" -name "*.aab" | head -1)
-          OUT="$RELEASE_DIR/DeskflowAndroid-$TAG.aab"
+          AAB_DIR=$(find app/build/outputs -type d \( -path "*/bundle/release" -o -path "*/bundle-ready/release" \) | head -1)
+          AAB=$(find "$AAB_DIR" -name "*.aab" | head -1)
+          OUT="$AAB_DIR/DeskflowAndroid-$TAG.aab"
           cp "$AAB" "$OUT"
           echo "AAB_FILE=$(readlink -f "$OUT")" >> $GITHUB_OUTPUT
           ls -lh "$OUT"

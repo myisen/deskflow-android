@@ -55,8 +55,7 @@ protobuf {
 
 val (projectVersionName, projectVersionCode) = readVersionProperties(project)
 
-// 从 local.properties 读取 release 签名配置（本地用，CI 不存在时 release 回退到未签名）
-// Gradle 默认不读 local.properties，这里手动加载
+// 从 local.properties 读取 release 签名配置（本地用，CI 不存在时 release 自动回退为未签名）
 val localPropsFile = rootProject.file("local.properties")
 val localProps = Properties().also { p ->
   if (localPropsFile.exists()) localPropsFile.inputStream().use { p.load(it) }
