@@ -27,9 +27,6 @@ package org.tfv.deskflow.client.events
 import org.tfv.deskflow.client.models.keys.KeyModifierMask
 import java.io.Serializable
 
-<<<<<<< HEAD
-data class KeyboardEvent(val type: Type, val id: UInt, val button: UInt = 0u, val mask: UInt, val count: Short = 0) : ClientEvent(), Serializable {
-=======
 /**
  * KeyboardEvent — 客户端侧键盘事件。
  *
@@ -44,7 +41,6 @@ data class KeyboardEvent(
     val count: Short = 0,
     val text: String? = null,
 ) : ClientEvent(), Serializable {
->>>>>>> trae/agent-0UI0AO
 
     enum class Type {
         Up,
@@ -52,25 +48,12 @@ data class KeyboardEvent(
         Repeat
     }
 
-<<<<<<< HEAD
-    fun getModifiers():KeyModifierMask {
-=======
     fun getModifiers(): KeyModifierMask {
->>>>>>> trae/agent-0UI0AO
         return KeyModifierMask(mask)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun toString(): String {
-<<<<<<< HEAD
-        return "KeyboardEvent(type=$type, id=($id,${id.toHexString()},${id.toString(2)}), button=$button, mask=($mask,${mask.toHexString()},${mask.toString(2)}), count=$count)"
-    }
-
-    companion object {
-        fun down(id: UInt, button: UInt = 0u, mask: UInt = 0u) = KeyboardEvent(Type.Down, id, button, mask)
-        fun up(id: UInt, button: UInt = 0u, mask: UInt = 0u) = KeyboardEvent(Type.Up, id, button, mask)
-        fun repeat(id: UInt, button: UInt = 0u, mask: UInt = 0u, count: Short = 0) = KeyboardEvent(Type.Repeat, id, button, mask,count)
-=======
         val textPart = text?.let { ", text=\"$it\"" } ?: ""
         return "KeyboardEvent(type=$type, id=($id,${id.toHexString()},${id.toString(2)}), button=$button, mask=($mask,${mask.toHexString()},${mask.toString(2)}), count=$count$textPart)"
     }
@@ -97,6 +80,5 @@ data class KeyboardEvent(
             count: Short = 0,
             text: String? = null,
         ) = KeyboardEvent(Type.Repeat, id, button, mask, count, text = text)
->>>>>>> trae/agent-0UI0AO
     }
 }

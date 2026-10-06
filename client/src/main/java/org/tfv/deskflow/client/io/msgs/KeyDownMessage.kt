@@ -23,18 +23,6 @@
  */
 package org.tfv.deskflow.client.io.msgs
 
-<<<<<<< HEAD
-import java.io.DataInputStream
-import java.io.DataOutputStream
-
-class KeyDownMessage(
-    var id: UInt = 0u,
-    var mask: UInt = 0u,
-    var button: UInt = 0u
-) : Message(MessageType.DKEYDOWN) {
-
-
-=======
 import org.tfv.deskflow.client.io.readString
 import org.tfv.deskflow.client.io.writeString
 import java.io.DataInputStream
@@ -52,39 +40,27 @@ class KeyDownMessage(
     var text: String? = null,
 ) : Message(MessageType.DKEYDOWN) {
 
->>>>>>> trae/agent-0UI0AO
     override fun readData(inStream: DataInputStream, dataSize: Int) {
         id = inStream.readUnsignedShort().toUInt()
         mask = inStream.readUnsignedShort().toUInt()
         button = inStream.readUnsignedShort().toUInt()
-<<<<<<< HEAD
-=======
         // DKDN 的数据正好 6 字节（3 × short）；
         // DKDL 多了一段 UTF-8 字符串，dataSize 会更大。
         if (dataSize > 6) {
             text = inStream.readString()
         }
->>>>>>> trae/agent-0UI0AO
     }
 
     override fun writeData(outStream: DataOutputStream) {
         outStream.writeShort(id.toInt())
         outStream.writeShort(mask.toInt())
         outStream.writeShort(button.toInt())
-<<<<<<< HEAD
-    }
-
-
-    override fun toString(): String {
-        return MESSAGE_TYPE.toString() + ":" + this.id + ":" + mask + ":" + button
-=======
         text?.let { outStream.writeString(it) }
     }
 
     override fun toString(): String {
         val textPart = text?.let { ", text=\"$it\"" } ?: ""
         return "$MESSAGE_TYPE:$id:$mask:$button$textPart"
->>>>>>> trae/agent-0UI0AO
     }
 
     companion object {

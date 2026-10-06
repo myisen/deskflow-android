@@ -172,8 +172,6 @@ class VirtualKeyboardService : InputMethodService() {
   /** Client responsible for communicating with the connection service. */
   private lateinit var serviceClient: ConnectionServiceClient
 
-<<<<<<< HEAD
-=======
   /**
    * PARTIAL_WAKE_LOCK: 保持 CPU 运行但不强制亮屏（省电）。
    * 每次收到 KeyboardEvent.Down 时续期 2 秒，持续输入期间屏幕不会熄灭。
@@ -181,7 +179,6 @@ class VirtualKeyboardService : InputMethodService() {
    */
   private lateinit var wakeLock: android.os.PowerManager.WakeLock
 
->>>>>>> trae/agent-0UI0AO
   private lateinit var keyboardActions:
     Map<VirtualKeyboardAction, EditorKeyboardAction>
 
@@ -260,15 +257,12 @@ class VirtualKeyboardService : InputMethodService() {
 
     serviceClient.bind()
     keyboardViewLifecycleOwner.onCreate()
-<<<<<<< HEAD
-=======
 
     val pm = getSystemService(POWER_SERVICE) as android.os.PowerManager
     wakeLock = pm.newWakeLock(
       android.os.PowerManager.PARTIAL_WAKE_LOCK,
       "Deskflow:ImeWakeLock",
     ).apply { setReferenceCounted(false) }
->>>>>>> trae/agent-0UI0AO
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -277,11 +271,8 @@ class VirtualKeyboardService : InputMethodService() {
 
   override fun onDestroy() {
     serviceClient.unbind()
-<<<<<<< HEAD
-=======
     // 确保 WakeLock 不泄漏
     if (::wakeLock.isInitialized && wakeLock.isHeld) wakeLock.release()
->>>>>>> trae/agent-0UI0AO
     super.onDestroy()
     catch({ keyboardViewLifecycleOwner.onDestroy() }) { err: Throwable ->
       log.error(err) {
@@ -298,23 +289,17 @@ class VirtualKeyboardService : InputMethodService() {
 
   override fun onFinishInputView(finishingInput: Boolean) {
     keyboardViewLifecycleOwner.onPause()
-<<<<<<< HEAD
-=======
     // 键盘隐藏时释放 WakeLock，由系统息屏计时器接管
     if (wakeLock.isHeld) wakeLock.release()
->>>>>>> trae/agent-0UI0AO
   }
 
   override fun onCreateInputView(): View {
     log.debug { "onCreateInputView" }
     val win = window.window ?: return super.onCreateInputView()
     WindowCompat.setDecorFitsSystemWindows(win, false)
-<<<<<<< HEAD
-=======
     // FLAG_KEEP_SCREEN_ON: 键盘窗口显示期间保持屏幕常亮。
     // 某些 OEM ROM 上仍可能不生效，由 WakeLock 兜底。
     win.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
->>>>>>> trae/agent-0UI0AO
     keyboardViewLifecycleOwner.attachToDecorView(win.decorView)
     WindowCompat.setDecorFitsSystemWindows(win, false)
     val view = ComposeView(this)
@@ -430,8 +415,6 @@ class VirtualKeyboardService : InputMethodService() {
       return
     }
 
-<<<<<<< HEAD
-=======
     // 屏幕常亮续期：每收到一个 Down 事件续期 2 秒；
     // 持续输入期间 WakeLock 永远不会超时；停止输入后 2 秒内释放。
     // PARTIAL_WAKE_LOCK 只保持 CPU，不强制亮屏（省电），FLAG_KEEP_SCREEN_ON 负责屏幕层。
@@ -440,7 +423,6 @@ class VirtualKeyboardService : InputMethodService() {
       wakeLock.acquire(2000L)
     }
 
->>>>>>> trae/agent-0UI0AO
     // 4. Get the key ID and check if it's a modifier or special key.
     val id = event.id.toInt()
 
@@ -471,8 +453,6 @@ class VirtualKeyboardService : InputMethodService() {
         action.key.action(ic, et, specialKey, mods, event, editHistory, this)
       }
       else -> {
-<<<<<<< HEAD
-=======
         // === 中文/IME 文本输入路径 ===
         // Deskflow 服务端在 PC 中文输入法输入时发送 DKDL 消息，携带 UTF-8 文本。
         // 这条路径优先使用 event.text，避免 id.toChar() 对 Deskflow 键码（>255）产生错误。
@@ -487,7 +467,6 @@ class VirtualKeyboardService : InputMethodService() {
         }
 
         // === 普通按键路径（ASCII 字母、数字、F 键等） ===
->>>>>>> trae/agent-0UI0AO
         log.debug { "Received $event" }
         val keyChar = id.toChar()
         val keyStr = keyChar.toString()
