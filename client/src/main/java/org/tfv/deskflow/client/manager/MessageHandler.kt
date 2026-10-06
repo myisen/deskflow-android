@@ -194,7 +194,7 @@ class MessageHandler(
 
       is KeyDownMessage -> {
         ClientEventBus.emit(
-          KeyboardEvent.down(message.id, message.button, message.mask)
+          KeyboardEvent.down(message.id, message.button, message.mask, message.text)
         )
       }
       is KeyRepeatMessage -> {
@@ -204,6 +204,7 @@ class MessageHandler(
             message.button,
             message.mask,
             message.count,
+            message.text,
           )
         )
       }

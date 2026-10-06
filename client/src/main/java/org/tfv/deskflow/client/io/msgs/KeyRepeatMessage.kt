@@ -23,22 +23,36 @@
  */
 package org.tfv.deskflow.client.io.msgs
 
+import org.tfv.deskflow.client.io.readString
+import org.tfv.deskflow.client.io.writeString
 import java.io.DataInputStream
 import java.io.DataOutputStream
 
+/**
+ * DKRP 1.0:  3 × short  = 6 字节（id, mask, count）
+ * DKRP 新:   4 × short + 可选 UTF-8 string（id, mask, count, button, text）
+ * 模板在 MessageTemplate 里会命中新版（有 %s），但服务端可能发老版。
+ * readData 根据 dataSize 智能判断，避免越界读。
+ */
 class KeyRepeatMessage(
     var id: UInt = 0u,
     var mask: UInt = 0u,
     var count: Short = 0,
     var button: UInt = 0u,
+    var text: String? = null,
 ) : Message(MESSAGE_TYPE) {
-
 
     override fun readData(inStream: DataInputStream, dataSize: Int) {
         id = inStream.readUnsignedShort().toUInt()
         mask = inStream.readUnsignedShort().toUInt()
         count = inStream.readShort()
-        button = inStream.readUnsignedShort().toUInt()
+        if (dataSize >= 8) {
+            // 新版 DKRP：多一个 button + 可选 text
+            button = inStream.readUnsignedShort().toUInt()
+            if (dataSize > 8) {
+                text = inStream.readString()
+            }
+        }
     }
 
     override fun writeData(outStream: DataOutputStream) {
@@ -46,10 +60,12 @@ class KeyRepeatMessage(
         outStream.writeShort(mask.toInt())
         outStream.writeShort(count.toInt())
         outStream.writeShort(button.toInt())
+        text?.let { outStream.writeString(it) }
     }
 
     override fun toString(): String {
-        return "$MESSAGE_TYPE:$id:$mask:$button"
+        val textPart = text?.let { ", text=\"$it\"" } ?: ""
+        return "$MESSAGE_TYPE:$id:$mask:$count:$button$textPart"
     }
 
     companion object {
